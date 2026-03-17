@@ -37,7 +37,7 @@ module.exports = (sequelize) => {
             defaultValue: false
         },
         threatReasons: {
-            type: DataTypes.ARRAY(DataTypes.STRING),
+            type: DataTypes.JSONB,
             defaultValue: []
         },
         mlConfidence: {
