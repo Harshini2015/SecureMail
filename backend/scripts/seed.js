@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const { sequelize, User, Email, ThreatLog } = require('../models/index');
 const bcrypt = require('bcryptjs');
 
