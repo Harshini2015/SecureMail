@@ -1,75 +1,107 @@
+"""
+features.py — Geeta (ML + Risk Scoring)
+Extracts the 8 structural features as specified in the checklist.
+Also provides TF-IDF vectorizer setup.
+"""
+
 import re
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-def extract_features(subject: str, body: str) -> np.ndarray:
+
+# ─────────────────────────────────────────────
+# TF-IDF Vectorizer (fit on training data only)
+# ─────────────────────────────────────────────
+
+def get_tfidf_vectorizer():
+    """Returns a new (unfitted) TF-IDF vectorizer as per checklist spec."""
+    return TfidfVectorizer(
+        max_features=5000,
+        ngram_range=(1, 2),
+        stop_words='english'
+    )
+
+
+# ─────────────────────────────────────────────
+# 8 Structural Features (checklist exact spec)
+# ─────────────────────────────────────────────
+
+def extract_structural_features(subject: str, body: str) -> np.ndarray:
     """
-    Extract 8 structural features from email subject + body.
-    Returns a numpy array of shape (1, 8)
+    Extract exactly 8 structural features from email subject + body.
+
+    Features (checklist order):
+      1. url_count         — number of http/https links via regex
+      2. has_attachment    — 1 if "attachment" or "see attached" found
+      3. subject_length    — character count of subject
+      4. all_caps_ratio    — ALL-CAPS words / total words
+      5. urgent_word_count — count of urgent trigger words
+      6. exclamation_count — number of '!' characters
+      7. has_greeting      — 1 if "Dear" or "Hello" found
+      8. special_char_ratio— count of !?$ characters / total length
+
+    Returns: np.ndarray of shape (1, 8)
     """
-    text = f"{subject} {body}".lower()
 
-    # Feature 1 — Urgency word count
-    urgency_words = ['urgent', 'immediately', 'action required', 'verify now',
-                     'expires', 'suspended', 'limited time', 'act now',
-                     'within 24 hours', 'within 48 hours', 'deadline']
-    urgency_count = sum(1 for w in urgency_words if w in text)
+    text = f"{subject} {body}"
+    text_lower = text.lower()
 
-    # Feature 2 — Suspicious link patterns
-    link_patterns = ['http://', 'click here', 'verify your account',
-                     'confirm your', 'login now', '.tk', '.xyz', '.ml',
-                     'bit.ly', 'tinyurl']
-    link_count = sum(1 for p in link_patterns if p in text)
+    # 1. url_count — regex count of http/https links
+    url_count = len(re.findall(r'https?://', text_lower))
 
-    # Feature 3 — Money/prize mentions
-    money_words = ['prize', 'winner', 'won', 'lottery', 'reward',
-                   'claim', 'free', 'gift card', 'cash', 'rs.',
-                   'dollar', 'lakh', 'crore', '$$']
-    money_count = sum(1 for w in money_words if w in text)
+    # 2. has_attachment — 1 if attachment words present
+    has_attachment = int(
+        'attachment' in text_lower or 'see attached' in text_lower
+    )
 
-    # Feature 4 — Personal info requests
-    personal_words = ['password', 'bank account', 'credit card', 'ssn',
-                      'social security', 'date of birth', 'otp',
-                      'pin number', 'full name', 'phone number']
-    personal_count = sum(1 for w in personal_words if w in text)
+    # 3. subject_length — character count of subject
+    subject_length = len(subject)
 
-    # Feature 5 — Fear/threat language
-    fear_words = ['suspended', 'blocked', 'terminated', 'unauthorized',
-                  'compromised', 'hacked', 'illegal', 'violation',
-                  'permanently closed', 'legal action']
-    fear_count = sum(1 for w in fear_words if w in text)
+    # 4. all_caps_ratio — CAPS words / total words
+    words = text.split()
+    caps_words = [w for w in words if w.isupper() and len(w) > 1]
+    all_caps_ratio = len(caps_words) / len(words) if words else 0.0
 
-    # Feature 6 — Text length (normalized)
-    text_length = min(len(text) / 1000.0, 1.0)
+    # 5. urgent_word_count — checklist exact word list
+    urgent_words = [
+        'urgent', 'verify', 'suspended', 'click here',
+        'act now', 'confirm', 'limited'
+    ]
+    urgent_word_count = sum(1 for w in urgent_words if w in text_lower)
 
-    # Feature 7 — Exclamation mark count (normalized)
-    exclamation_count = min(text.count('!') / 10.0, 1.0)
+    # 6. exclamation_count — number of '!' characters
+    exclamation_count = text.count('!')
 
-    # Feature 8 — All caps word count
-    caps_count = len(re.findall(r'\b[A-Z]{3,}\b', f"{subject} {body}"))
-    caps_normalized = min(caps_count / 5.0, 1.0)
+    # 7. has_greeting — 1 if "Dear" or "Hello" present
+    has_greeting = int('dear' in text_lower or 'hello' in text_lower)
+
+    # 8. special_char_ratio — count of !?$ / total length
+    special_chars = sum(1 for c in text if c in '!?$')
+    special_char_ratio = special_chars / len(text) if len(text) > 0 else 0.0
 
     features = np.array([[
-        urgency_count,
-        link_count,
-        money_count,
-        personal_count,
-        fear_count,
-        text_length,
+        url_count,
+        has_attachment,
+        subject_length,
+        all_caps_ratio,
+        urgent_word_count,
         exclamation_count,
-        caps_normalized
+        has_greeting,
+        special_char_ratio
     ]])
 
     return features
 
 
 def get_feature_names():
+    """Returns the names of all 8 structural features."""
     return [
-        'urgency_count',
-        'link_count',
-        'money_count',
-        'personal_info_count',
-        'fear_count',
-        'text_length',
+        'url_count',
+        'has_attachment',
+        'subject_length',
+        'all_caps_ratio',
+        'urgent_word_count',
         'exclamation_count',
-        'caps_word_count'
+        'has_greeting',
+        'special_char_ratio'
     ]
