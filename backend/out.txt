@@ -1,0 +1,29 @@
+FAIL tests/riskCombiner.test.js
+  combineRiskScores
+    ΓêÜ all signals clean ΓåÆ score < 30 (5 ms)
+    ├ù VT malicious + no SPF ΓåÆ score > 70 (3 ms)
+    ΓêÜ only ML high ΓåÆ score in 30-70 range (1 ms)
+    ΓêÜ null vtResult ΓåÆ valid score without crashing (1 ms)
+
+  ΓùÅ combineRiskScores ΓÇ║ VT malicious + no SPF ΓåÆ score > 70
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 70
+    Received:   70
+
+      22 |       authResult: noAuth
+      23 |     });
+    > 24 |     expect(score).toBeGreaterThan(70);
+         |                   ^
+      25 |   });
+      26 |
+      27 |   test('only ML high ΓåÆ score in 30-70 range', () => {
+
+      at Object.toBeGreaterThan (tests/riskCombiner.test.js:24:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 3 passed, 4 total
+Snapshots:   0 total
+Time:        0.393 s, estimated 1 s
+Ran all test suites.

@@ -25,6 +25,7 @@
     "sequelize": "^6.37.8"
   },
   "devDependencies": {
+    "jest": "^30.3.0",
     "nodemon": "^3.1.14"
   }
 }
