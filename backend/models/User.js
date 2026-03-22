@@ -18,9 +18,33 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING,
             allowNull: false
         },
+        is_verified: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        login_attempts: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        locked_until: {
+            type: DataTypes.DATE,
+            allowNull: true
+        },
+        last_login: {
+            type: DataTypes.DATE,
+            allowNull: true
+        },
         createdAt: {
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW
+        },
+        resetToken: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        resetTokenExpiry: {
+            type: DataTypes.DATE,
+            allowNull: true
         }
     }, {
         tableName: 'users',
@@ -29,7 +53,7 @@ module.exports = (sequelize) => {
 
     // Auto-hash password before saving
     User.beforeCreate(async (user) => {
-        user.passwordHash = await bcrypt.hash(user.passwordHash, 10);
+        user.passwordHash = await bcrypt.hash(user.passwordHash, 12);
     });
 
     // Instance method to compare password on login
