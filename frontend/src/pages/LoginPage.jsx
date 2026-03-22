@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,13 +9,22 @@ export default function LoginPage() {
     const [step, setStep] = useState('email');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.message) {
+            setSuccess(location.state.message);
+        }
+    }, [location]);
 
     const handleEmailNext = (e) => {
         e.preventDefault();
         setError('');
-        if (!email) { setError('Enter an email or phone number'); return; }
+        setSuccess('');
+        if (!email) { setError('Enter an email'); return; }
         if (!email.includes('@')) { setError('Enter a valid email address'); return; }
         setStep('password');
     };
@@ -23,14 +32,17 @@ export default function LoginPage() {
     const handleSignIn = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         if (!password) { setError('Enter a password'); return; }
         setLoading(true);
         try {
             const res = await api.post('/api/auth/login', { email, password });
-            login(res.data.token, res.data.user);
-            navigate('/inbox');
+            if (res.data.success) {
+                login(res.data.accessToken, res.data.user);
+                navigate('/inbox');
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Wrong password. Try again or click Forgot password.');
+            setError(err.response?.data?.error || 'Wrong password. Try again or click Forgot password.');
         } finally {
             setLoading(false);
         }
@@ -60,6 +72,17 @@ export default function LoginPage() {
                     <h1>Sign in</h1>
                     <p className="subtitle">to continue to SecureMail</p>
 
+                    {success && (
+                        <div className="global-success-banner" style={{
+                            background: '#e6f4ea', color: '#1e8e3e', padding: '12px',
+                            borderRadius: '8px', marginBottom: '16px', display: 'flex',
+                            alignItems: 'center', gap: '8px', fontSize: '14px'
+                        }}>
+                            <span className="material-icons" style={{ fontSize: 18 }}>check_circle</span>
+                            {success}
+                        </div>
+                    )}
+
                     {error && (
                         <div className="global-err-banner">
                             <span className="material-icons" style={{ fontSize: 18 }}>error</span>
@@ -78,7 +101,7 @@ export default function LoginPage() {
                                     autoFocus
                                     className={error ? 'error-input' : ''}
                                 />
-                                <label>Email or phone</label>
+                                <label>Email address</label>
                             </div>
                             <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 32, lineHeight: '20px' }}>
                                 Not your computer? Use Guest mode to sign in privately.{' '}
@@ -123,7 +146,7 @@ export default function LoginPage() {
                                 <label>Enter your password</label>
                             </div>
 
-                            <a href="#" className="auth-forgot">Forgot password?</a>
+                            <Link to="/forgot-password" title="Click to recover your account" className="auth-forgot">Forgot password?</Link>
 
                             <div className="auth-actions">
                                 <Link to="/register" className="auth-create-btn">Create account</Link>
